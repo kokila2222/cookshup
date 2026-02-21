@@ -10,7 +10,6 @@ import Feeds from "./pages/Feeds";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import Toast from "./components/Toast";
-import logo from "./assets/Logo.png";
 import "./App.css";
 
 import { db } from "./firebase";
@@ -191,8 +190,7 @@ function App() {
       <header className="app-header">
         <div className="app-header-inner">
           <Link to="/" className="app-logo-link">
-            <img src={logo} alt="Cookshup" className="app-logo-img" />
-            <span className="app-logo-text">Cookshup</span>
+            <span className="app-logo-text">cook<span className="app-logo-accent">shup</span></span>
           </Link>
 
           <nav className="app-nav">

@@ -24,20 +24,19 @@
 .app-logo-link {
   display: flex;
   align-items: center;
-  gap: 10px;
   text-decoration: none;
 }
 
-.app-logo-img {
-  height: 36px;
-  width: auto;
+.app-logo-text {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--color-text);
+  letter-spacing: -0.04em;
+  text-transform: lowercase;
 }
 
-.app-logo-text {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text);
-  letter-spacing: -0.02em;
+.app-logo-accent {
+  color: var(--color-primary);
 }
 
 /* --- Nav --- */
