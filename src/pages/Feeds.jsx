@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import UrlCardImage from "../components/UrlCardImage";
@@ -26,6 +26,28 @@ function renderStars(rating) {
         </span>
       ))}
     </span>
+  );
+}
+
+function PancakeLikeButton({ recipeId, likes, onLike, currentUser }) {
+  const [flipping, setFlipping] = useState(false);
+
+  function handleClick() {
+    if (!currentUser) {
+      alert("Please log in to like recipes.");
+      return;
+    }
+    setFlipping(true);
+    onLike(recipeId);
+    setTimeout(() => setFlipping(false), 600);
+  }
+
+  return (
+    <button className="like-btn" onClick={handleClick}>
+      <span className={`like-btn-pancake${flipping ? " flipping" : ""}`}>&#129374;</span>
+      <span className="like-btn-label">Like</span>
+      {(likes || 0) > 0 && <span className="like-btn-count">{likes}</span>}
+    </button>
   );
 }
 
@@ -134,19 +156,12 @@ function Feeds({ recipes, onLike }) {
               </div>
 
               <div className="recipe-card-footer">
-                <button
-                  className="like-btn"
-                  onClick={() => {
-                    if (currentUser) {
-                      onLike(recipe.id);
-                    } else {
-                      alert("Please log in to like recipes.");
-                    }
-                  }}
-                >
-                  <span className="like-btn-heart">&#10084;&#65039;</span>
-                  <span>{recipe.likes || 0}</span>
-                </button>
+                <PancakeLikeButton
+                  recipeId={recipe.id}
+                  likes={recipe.likes}
+                  onLike={onLike}
+                  currentUser={currentUser}
+                />
               </div>
             </div>
           ))}
