@@ -30,7 +30,8 @@ function renderStars(rating) {
 
 function Feeds({ recipes, onLike }) {
   const { currentUser } = useAuth();
-  const feedRecipes = recipes.filter((r) => r.showInFeeds);
+  // Recipes passed in are already filtered to public feed items
+  const feedRecipes = recipes;
 
   return (
     <div>

@@ -28,6 +28,7 @@ import {
 function App() {
   const { currentUser, logout, loading } = useAuth();
   const [recipes, setRecipes] = useState([]);
+  const [feedRecipes, setFeedRecipes] = useState([]);
   const [userName, setUserName] = useState("Your Name");
   const [toast, setToast] = useState({ show: false, message: "" });
   const navigate = useNavigate();
@@ -68,6 +69,29 @@ function App() {
 
     return unsubscribe;
   }, [currentUser, loading]);
+
+  // Fetch ALL public feed recipes from ALL users
+  useEffect(() => {
+    if (loading) return;
+
+    const feedQuery = query(
+      collection(db, "recipes"),
+      where("showInFeeds", "==", true)
+    );
+    const unsubscribe = onSnapshot(feedQuery, (querySnapshot) => {
+      const fetched = [];
+      querySnapshot.forEach((docSnap) =>
+        fetched.push({ ...docSnap.data(), id: docSnap.id })
+      );
+      // Sort by newest first
+      fetched.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      setFeedRecipes(fetched);
+    }, (error) => {
+      console.error("Feed listener error:", error);
+    });
+
+    return unsubscribe;
+  }, [loading]);
 
   useEffect(() => {
     if (currentUser?.displayName) {
@@ -248,7 +272,7 @@ function App() {
 
       <main className="app-main">
         <Routes>
-          <Route path="/" element={<Feeds recipes={recipes} onLike={handleLikeRecipe} />} />
+          <Route path="/" element={<Feeds recipes={feedRecipes} onLike={handleLikeRecipe} />} />
           <Route
             path="/my-recipes"
             element={
@@ -271,7 +295,7 @@ function App() {
               </PrivateRoute>
             }
           />
-          <Route path="/recipe/:id" element={<RecipeDetail recipes={recipes} />} />
+          <Route path="/recipe/:id" element={<RecipeDetail recipes={[...recipes, ...feedRecipes]} />} />
           <Route
             path="/account"
             element={
