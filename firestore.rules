@@ -11,9 +11,15 @@ service cloud.firestore {
       allow create: if request.auth != null
                     && request.resource.data.uid == request.auth.uid;
 
-      // Only the recipe owner can update or delete
-      allow update, delete: if request.auth != null
-                            && resource.data.uid == request.auth.uid;
+      // Any authenticated user can "like" a recipe (only update the likes field)
+      allow update: if request.auth != null
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
+
+      // Only the recipe owner can fully update or delete
+      allow update: if request.auth != null
+                    && resource.data.uid == request.auth.uid;
+      allow delete: if request.auth != null
+                    && resource.data.uid == request.auth.uid;
     }
   }
 }
