@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import UrlCardImage from "../components/UrlCardImage";
 
 function formatCategory(category) {
   if (Array.isArray(category)) {
@@ -100,22 +101,7 @@ function Feeds({ recipes, onLike }) {
 
                 {recipe.type === "url" && recipe.recipeUrl && (
                   <a href={recipe.recipeUrl} target="_blank" rel="noopener noreferrer" className="url-card-link">
-                    {recipe.recipeUrlImage ? (
-                      <img
-                        src={recipe.recipeUrlImage}
-                        alt={recipe.title}
-                        className="url-card-image"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                          if (e.target.nextElementSibling?.classList.contains("url-card-placeholder")) {
-                            e.target.nextElementSibling.style.display = "flex";
-                          }
-                        }}
-                      />
-                    ) : null}
-                    <div className="url-card-placeholder" style={{ display: recipe.recipeUrlImage ? "none" : "flex", height: 180, alignItems: "center", justifyContent: "center", background: "#f1f3f5", color: "#6c757d", fontSize: "2.5rem" }}>
-                      &#128279;
-                    </div>
+                    <UrlCardImage src={recipe.recipeUrlImage} alt={recipe.title} height={180} />
                     <div className="url-card-domain">
                       {new URL(recipe.recipeUrl).hostname.replace("www.", "")}
                     </div>
