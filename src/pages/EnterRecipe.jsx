@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { storage } from "../firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const CUISINE_OPTIONS = [
   "Indian", "Italian", "Chinese", "Mexican", "Thai", "American", "Japanese", "Korean", "Middle Eastern", "Other",
@@ -32,10 +34,12 @@ function getYoutubeId(url) {
   return match ? match[1] : "";
 }
 
-function EnterRecipe({ onAddRecipe, showToast }) {
+function EnterRecipe({ onAddRecipe, showToast, currentUser }) {
   const [form, setForm] = useState(initialState);
   const [photoPreviews, setPhotoPreviews] = useState([]);
+  const [photoFiles, setPhotoFiles] = useState([]);
   const [urlLoading, setUrlLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef();
   const navigate = useNavigate();
 
@@ -172,6 +176,7 @@ function EnterRecipe({ onAddRecipe, showToast }) {
   function handlePhotoChange(e) {
     const files = Array.from(e.target.files);
     const urls = files.map((f) => URL.createObjectURL(f));
+    setPhotoFiles(files);
     setForm((prev) => ({ ...prev, photos: urls }));
     setPhotoPreviews(urls);
   }
@@ -203,17 +208,37 @@ function EnterRecipe({ onAddRecipe, showToast }) {
       return;
     }
 
+    setSubmitting(true);
     try {
-      const recipe = { ...form, id: Date.now().toString() };
+      let photoUrls = form.photos;
+
+      // Upload photos to Firebase Storage if user is logged in and has photo files
+      if (currentUser && form.type === "photo" && photoFiles.length > 0) {
+        showToast && showToast("Uploading photos...");
+        photoUrls = await Promise.all(
+          photoFiles.map(async (file) => {
+            const storageRef = ref(
+              storage,
+              `recipes/${currentUser.uid}/${Date.now()}_${file.name}`
+            );
+            await uploadBytes(storageRef, file);
+            return getDownloadURL(storageRef);
+          })
+        );
+      }
+
+      const recipe = { ...form, photos: photoUrls, id: Date.now().toString() };
       await onAddRecipe(recipe);
       setForm(initialState);
       setPhotoPreviews([]);
+      setPhotoFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
       navigate("/my-recipes");
     } catch (err) {
       console.error("Error adding recipe:", err);
       showToast && showToast("Failed to save recipe. Check console.");
     }
+    setSubmitting(false);
   }
 
   return (
@@ -444,8 +469,8 @@ function EnterRecipe({ onAddRecipe, showToast }) {
           </div>
 
           {/* Submit */}
-          <button type="submit" className="btn-success btn-lg" style={{ minWidth: 160 }}>
-            Add Recipe
+          <button type="submit" className="btn-success btn-lg" style={{ minWidth: 160 }} disabled={submitting}>
+            {submitting ? "Saving..." : "Add Recipe"}
           </button>
         </form>
       </div>

@@ -267,7 +267,7 @@ function App() {
             path="/enter-recipe"
             element={
               <PrivateRoute>
-                <EnterRecipe onAddRecipe={handleAddRecipe} showToast={showToast} />
+                <EnterRecipe onAddRecipe={handleAddRecipe} showToast={showToast} currentUser={currentUser} />
               </PrivateRoute>
             }
           />

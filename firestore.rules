@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Recipes collection
+    match /recipes/{recipeId} {
+      // Anyone can read recipes marked as public (for feeds)
+      allow read: if true;
+
+      // Only authenticated users can create recipes, and uid must match
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
+
+      // Only the recipe owner can update or delete
+      allow update, delete: if request.auth != null
+                            && resource.data.uid == request.auth.uid;
+    }
+  }
+}

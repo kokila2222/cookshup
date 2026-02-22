@@ -6,15 +6,16 @@ import {
   browserLocalPersistence
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
-// Your web app's Firebase configuration
+// Firebase configuration from environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyA1Wde2hTwn4NfoTXbPOfVIMH8H_DokVjY",
-  authDomain: "cookshup-app-6e73a.firebaseapp.com",
-  projectId: "cookshup-app-6e73a",
-  storageBucket: "cookshup-app-6e73a.firebasestorage.app",
-  messagingSenderId: "27583144544",
-  appId: "1:27583144544:web:6954913e5d290644915905",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase
@@ -28,7 +29,8 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 
 const db = getFirestore(app);
+const storage = getStorage(app);
 
-// Export the auth and db instances
-export { auth, db };
+// Export the auth, db, and storage instances
+export { auth, db, storage };
 export default app;
