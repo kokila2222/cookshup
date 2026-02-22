@@ -412,11 +412,74 @@ function EnterRecipe({ onAddRecipe, showToast, currentUser }) {
                   </div>
                 </div>
               )}
-              {/* Custom thumbnail upload */}
-              <div style={{ marginTop: 12 }}>
-                <label style={{ fontSize: "0.8125rem", color: "#6c757d" }}>
-                  {form.recipeUrlImage ? "Replace with your own image:" : "Upload a custom thumbnail (optional):"}
+              {/* Custom thumbnail: paste or upload */}
+              <div style={{ marginTop: 16 }}>
+                <label style={{ fontSize: "0.8125rem", color: "#6c757d", marginBottom: 6, display: "block" }}>
+                  {urlThumbPreview ? "Thumbnail preview:" : "Add a custom thumbnail (optional):"}
                 </label>
+                {!urlThumbPreview ? (
+                  <div
+                    onPaste={(e) => {
+                      const items = e.clipboardData?.items;
+                      if (!items) return;
+                      for (const item of items) {
+                        if (item.type.startsWith("image/")) {
+                          const file = item.getAsFile();
+                          if (file) {
+                            setUrlThumbFile(file);
+                            setUrlThumbPreview(URL.createObjectURL(file));
+                          }
+                          break;
+                        }
+                      }
+                    }}
+                    onClick={() => urlThumbInputRef.current?.click()}
+                    tabIndex={0}
+                    style={{
+                      border: "2px dashed #d1d5db",
+                      borderRadius: "var(--radius-md)",
+                      padding: "24px 16px",
+                      textAlign: "center",
+                      cursor: "pointer",
+                      background: "#fafafa",
+                      transition: "border-color 150ms ease",
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.borderColor = "#2563eb"}
+                    onMouseLeave={(e) => e.currentTarget.style.borderColor = "#d1d5db"}
+                    onFocus={(e) => e.currentTarget.style.borderColor = "#2563eb"}
+                    onBlur={(e) => e.currentTarget.style.borderColor = "#d1d5db"}
+                  >
+                    <div style={{ fontSize: "1.5rem", marginBottom: 4 }}>&#128247;</div>
+                    <div style={{ fontSize: "0.875rem", color: "#6c757d", fontWeight: 500 }}>
+                      Click to upload or <strong>paste</strong> an image (Ctrl+V)
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color: "#adb5bd", marginTop: 4 }}>
+                      Tip: Right-click any image online &rarr; Copy Image &rarr; click here &rarr; Ctrl+V
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="url-preview-card">
+                      <img src={urlThumbPreview} alt="Custom thumbnail" className="url-preview-card-image" />
+                      <div className="url-preview-card-info">
+                        <div className="url-preview-card-title">{form.title || "Recipe"}</div>
+                        <div className="url-preview-card-domain" style={{ color: "#16a34a" }}>Custom thumbnail</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-outline btn-sm"
+                      style={{ marginTop: 8 }}
+                      onClick={() => {
+                        setUrlThumbFile(null);
+                        setUrlThumbPreview("");
+                        if (urlThumbInputRef.current) urlThumbInputRef.current.value = "";
+                      }}
+                    >
+                      Remove thumbnail
+                    </button>
+                  </div>
+                )}
                 <input
                   type="file"
                   accept="image/*"
@@ -428,21 +491,12 @@ function EnterRecipe({ onAddRecipe, showToast, currentUser }) {
                       setUrlThumbPreview(URL.createObjectURL(file));
                     }
                   }}
-                  style={{ marginTop: 4 }}
+                  style={{ display: "none" }}
                 />
-                {urlThumbPreview && (
-                  <div className="url-preview-card" style={{ marginTop: 8 }}>
-                    <img src={urlThumbPreview} alt="Custom thumbnail" className="url-preview-card-image" />
-                    <div className="url-preview-card-info">
-                      <div className="url-preview-card-title">{form.title || "Recipe"}</div>
-                      <div className="url-preview-card-domain" style={{ color: "#16a34a" }}>Custom thumbnail</div>
-                    </div>
-                  </div>
-                )}
               </div>
               {!urlLoading && form.recipeUrl && !form.recipeUrlImage && !urlThumbPreview && (
                 <div className="url-fetching-status">
-                  No preview image found. Upload a thumbnail or save without an image.
+                  No preview image found. Paste or upload a thumbnail above, or save without one.
                 </div>
               )}
             </div>
