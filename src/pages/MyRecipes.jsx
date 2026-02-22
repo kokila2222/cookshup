@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import UrlCardImage from "../components/UrlCardImage";
+import { storage } from "../firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 function renderStars(rating, setRating) {
   return (
@@ -37,7 +39,7 @@ function formatCategory(category) {
   return category ? category.charAt(0).toUpperCase() + category.slice(1) : "";
 }
 
-function MyRecipes({ recipes, editRecipe, deleteRecipe, showToast }) {
+function MyRecipes({ recipes, editRecipe, deleteRecipe, showToast, currentUser }) {
   const typeOptions = ["all", ...getUniqueOptions(recipes, "type")];
   const cuisineOptions = ["all", ...getUniqueOptions(recipes, "cuisine")];
   const categoryOptions = ["all", ...getUniqueOptions(recipes, "category")];
@@ -47,6 +49,10 @@ function MyRecipes({ recipes, editRecipe, deleteRecipe, showToast }) {
   const [filterCategory, setFilterCategory] = useState("all");
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [editThumbFile, setEditThumbFile] = useState(null);
+  const [editThumbPreview, setEditThumbPreview] = useState("");
+  const [saving, setSaving] = useState(false);
+  const editThumbInputRef = useRef();
 
   const filteredRecipes = recipes.filter(
     (recipe) =>
@@ -61,6 +67,8 @@ function MyRecipes({ recipes, editRecipe, deleteRecipe, showToast }) {
   function startEdit(recipe) {
     setEditingId(recipe.id);
     setEditForm({ ...recipe });
+    setEditThumbFile(null);
+    setEditThumbPreview("");
   }
 
   function handleEditChange(field, value) {
@@ -68,20 +76,39 @@ function MyRecipes({ recipes, editRecipe, deleteRecipe, showToast }) {
   }
 
   async function handleSaveEdit() {
+    setSaving(true);
     try {
-      await editRecipe(editForm);
+      let updatedForm = { ...editForm };
+
+      // Upload new thumbnail if pasted/uploaded
+      if (currentUser && editThumbFile && editForm.type === "url") {
+        showToast && showToast("Uploading thumbnail...");
+        const thumbRef = ref(
+          storage,
+          `recipes/${currentUser.uid}/${Date.now()}_thumb_${editThumbFile.name}`
+        );
+        await uploadBytes(thumbRef, editThumbFile);
+        updatedForm.recipeUrlImage = await getDownloadURL(thumbRef);
+      }
+
+      await editRecipe(updatedForm);
       setEditingId(null);
       setEditForm({});
+      setEditThumbFile(null);
+      setEditThumbPreview("");
       showToast && showToast("Recipe updated!");
     } catch (e) {
       console.error("Failed to update recipe:", e);
       alert("Something went wrong while saving.");
     }
+    setSaving(false);
   }
 
   function handleCancelEdit() {
     setEditingId(null);
     setEditForm({});
+    setEditThumbFile(null);
+    setEditThumbPreview("");
   }
 
   return (
@@ -182,8 +209,62 @@ function MyRecipes({ recipes, editRecipe, deleteRecipe, showToast }) {
                       value={editForm.recipeUrl || ""}
                       onChange={(e) => handleEditChange("recipeUrl", e.target.value)}
                     />
-                    {editForm.recipeUrlImage && (
-                      <img src={editForm.recipeUrlImage} alt="Preview" className="url-preview-image" style={{ marginTop: 8 }} />
+                    <label style={{ marginTop: 12 }}>Thumbnail Image</label>
+                    {(editThumbPreview || editForm.recipeUrlImage) && (
+                      <img
+                        src={editThumbPreview || editForm.recipeUrlImage}
+                        alt="Preview"
+                        className="url-preview-image"
+                        style={{ marginTop: 8, maxHeight: 140, objectFit: "cover", borderRadius: 8, width: "100%" }}
+                      />
+                    )}
+                    <div
+                      tabIndex={0}
+                      onPaste={(e) => {
+                        const items = e.clipboardData?.items;
+                        if (!items) return;
+                        for (let i = 0; i < items.length; i++) {
+                          if (items[i].type.startsWith("image/")) {
+                            const file = items[i].getAsFile();
+                            if (file) {
+                              setEditThumbFile(file);
+                              setEditThumbPreview(URL.createObjectURL(file));
+                              showToast && showToast("Image pasted!");
+                            }
+                            break;
+                          }
+                        }
+                      }}
+                      style={{
+                        marginTop: 8,
+                        border: "2px dashed #cbd5e1",
+                        borderRadius: 10,
+                        padding: "18px 12px",
+                        textAlign: "center",
+                        color: "#64748b",
+                        fontSize: "0.92rem",
+                        cursor: "pointer",
+                        background: "#f8fafc",
+                        outline: "none",
+                      }}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = "#6366f1")}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                    >
+                      📋 Click here &amp; paste an image (Ctrl+V)
+                      <br />
+                      <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
+                        Copy an image from the web, then paste here
+                      </span>
+                    </div>
+                    {editThumbFile && (
+                      <button
+                        type="button"
+                        onClick={() => { setEditThumbFile(null); setEditThumbPreview(""); }}
+                        className="btn-outline btn-sm"
+                        style={{ marginTop: 6 }}
+                      >
+                        Remove pasted image
+                      </button>
                     )}
                   </div>
                 )}
@@ -245,7 +326,7 @@ function MyRecipes({ recipes, editRecipe, deleteRecipe, showToast }) {
                 </div>
 
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={handleSaveEdit} className="btn-success btn-sm">Save</button>
+                  <button onClick={handleSaveEdit} className="btn-success btn-sm" disabled={saving}>{saving ? "Saving..." : "Save"}</button>
                   <button onClick={handleCancelEdit} className="btn-outline btn-sm">Cancel</button>
                 </div>
               </div>

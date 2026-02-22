@@ -283,6 +283,7 @@ function App() {
                   deleteRecipe={handleDeleteRecipe}
                   showToast={showToast}
                   onLike={handleLikeRecipe}
+                  currentUser={currentUser}
                 />
               </PrivateRoute>
             }
