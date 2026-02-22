@@ -90,9 +90,22 @@ function RecipeDetail({ recipes = [] }) {
 
       {recipe.type === "url" && recipe.recipeUrl && (
         <a href={recipe.recipeUrl} target="_blank" rel="noopener noreferrer" className="url-card-link url-card-link-lg" style={{ marginBottom: 28 }}>
-          {recipe.recipeUrlImage && (
-            <img src={recipe.recipeUrlImage} alt={recipe.title} className="url-card-image" />
-          )}
+          {recipe.recipeUrlImage ? (
+            <img
+              src={recipe.recipeUrlImage}
+              alt={recipe.title}
+              className="url-card-image"
+              onError={(e) => {
+                e.target.style.display = "none";
+                if (e.target.nextElementSibling?.classList.contains("url-card-placeholder")) {
+                  e.target.nextElementSibling.style.display = "flex";
+                }
+              }}
+            />
+          ) : null}
+          <div className="url-card-placeholder" style={{ display: recipe.recipeUrlImage ? "none" : "flex", height: 220, alignItems: "center", justifyContent: "center", background: "#f1f3f5", color: "#6c757d", fontSize: "3rem" }}>
+            &#128279;
+          </div>
           <div className="url-card-domain">
             {new URL(recipe.recipeUrl).hostname.replace("www.", "")} &mdash; View Full Recipe &#8599;
           </div>
