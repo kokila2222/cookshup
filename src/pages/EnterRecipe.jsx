@@ -40,7 +40,10 @@ function EnterRecipe({ onAddRecipe, showToast, currentUser }) {
   const [photoFiles, setPhotoFiles] = useState([]);
   const [urlLoading, setUrlLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [urlThumbFile, setUrlThumbFile] = useState(null);
+  const [urlThumbPreview, setUrlThumbPreview] = useState("");
   const fileInputRef = useRef();
+  const urlThumbInputRef = useRef();
   const navigate = useNavigate();
 
   const toggleSelection = (field, value) => {
@@ -227,12 +230,27 @@ function EnterRecipe({ onAddRecipe, showToast, currentUser }) {
         );
       }
 
-      const recipe = { ...form, photos: photoUrls, id: Date.now().toString() };
+      // Upload custom URL thumbnail if provided
+      let finalRecipeUrlImage = form.recipeUrlImage;
+      if (currentUser && form.type === "url" && urlThumbFile) {
+        showToast && showToast("Uploading thumbnail...");
+        const thumbRef = ref(
+          storage,
+          `recipes/${currentUser.uid}/${Date.now()}_thumb_${urlThumbFile.name}`
+        );
+        await uploadBytes(thumbRef, urlThumbFile);
+        finalRecipeUrlImage = await getDownloadURL(thumbRef);
+      }
+
+      const recipe = { ...form, photos: photoUrls, recipeUrlImage: finalRecipeUrlImage, id: Date.now().toString() };
       await onAddRecipe(recipe);
       setForm(initialState);
       setPhotoPreviews([]);
       setPhotoFiles([]);
+      setUrlThumbFile(null);
+      setUrlThumbPreview("");
       if (fileInputRef.current) fileInputRef.current.value = "";
+      if (urlThumbInputRef.current) urlThumbInputRef.current.value = "";
       navigate("/my-recipes");
     } catch (err) {
       console.error("Error adding recipe:", err);
@@ -394,9 +412,37 @@ function EnterRecipe({ onAddRecipe, showToast, currentUser }) {
                   </div>
                 </div>
               )}
-              {!urlLoading && form.recipeUrl && !form.recipeUrlImage && (
+              {/* Custom thumbnail upload */}
+              <div style={{ marginTop: 12 }}>
+                <label style={{ fontSize: "0.8125rem", color: "#6c757d" }}>
+                  {form.recipeUrlImage ? "Replace with your own image:" : "Upload a custom thumbnail (optional):"}
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={urlThumbInputRef}
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setUrlThumbFile(file);
+                      setUrlThumbPreview(URL.createObjectURL(file));
+                    }
+                  }}
+                  style={{ marginTop: 4 }}
+                />
+                {urlThumbPreview && (
+                  <div className="url-preview-card" style={{ marginTop: 8 }}>
+                    <img src={urlThumbPreview} alt="Custom thumbnail" className="url-preview-card-image" />
+                    <div className="url-preview-card-info">
+                      <div className="url-preview-card-title">{form.title || "Recipe"}</div>
+                      <div className="url-preview-card-domain" style={{ color: "#16a34a" }}>Custom thumbnail</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {!urlLoading && form.recipeUrl && !form.recipeUrlImage && !urlThumbPreview && (
                 <div className="url-fetching-status">
-                  No preview image found. Click "Fetch Preview" to try again, or save without an image.
+                  No preview image found. Upload a thumbnail or save without an image.
                 </div>
               )}
             </div>
