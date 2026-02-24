@@ -1,8 +1,10 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import React from "react";
+import { useAuth } from "../contexts/AuthContext";
 import UrlCardImage from "../components/UrlCardImage";
 
 function renderStars(rating) {
+  if (!rating || rating === 0) return <span className="rating-unset">Not rated</span>;
   return (
     <span>
       {[1, 2, 3, 4, 5].map((star) => (
@@ -24,10 +26,19 @@ function formatCategory(category) {
   return category ? [category.charAt(0).toUpperCase() + category.slice(1)] : [];
 }
 
+function formatDate(timestamp) {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 function RecipeDetail({ recipes = [] }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const recipe = recipes.find((r) => r.id === id);
+
+  const isOwner = currentUser && recipe && recipe.uid === currentUser.uid;
 
   if (!recipe) {
     return (
@@ -45,10 +56,22 @@ function RecipeDetail({ recipes = [] }) {
     <div className="detail-page">
       {/* Hero */}
       <div className="detail-hero">
-        <h1 className="detail-title">{recipe.title}</h1>
-        {recipe.userName && (
-          <div className="detail-author">by {recipe.userName}</div>
-        )}
+        <div className="detail-hero-top">
+          <div>
+            <h1 className="detail-title">{recipe.title}</h1>
+            {recipe.userName && (
+              <div className="detail-author">by {recipe.userName}</div>
+            )}
+            {recipe.createdAt && (
+              <div className="recipe-card-date" style={{ marginTop: 4 }}>{formatDate(recipe.createdAt)}</div>
+            )}
+          </div>
+          {isOwner && (
+            <Link to="/my-recipes" className="btn-outline btn-sm">
+              Edit Recipe
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Meta Tags */}
@@ -142,6 +165,11 @@ function RecipeDetail({ recipes = [] }) {
         <button onClick={() => navigate(-1)} className="btn-outline">
           &#8592; Back
         </button>
+        {isOwner && (
+          <Link to="/my-recipes" className="btn-primary btn-sm" style={{ textDecoration: "none", color: "#fff" }}>
+            Edit Recipe
+          </Link>
+        )}
       </div>
     </div>
   );

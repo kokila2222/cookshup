@@ -662,6 +662,131 @@
   color: var(--color-text-muted);
 }
 
+/* --- Search & Toolbar --- */
+.feeds-toolbar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.search-bar {
+  flex: 1;
+  min-width: 220px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 1rem;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 36px 10px 38px;
+  font-size: 0.9375rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: var(--radius-full);
+}
+
+.search-clear:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.sort-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* --- Clickable Tags --- */
+.tag-clickable {
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.tag-clickable:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+.tag-active {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* --- Rating Unset --- */
+.rating-unset {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* --- Recipe Card Date --- */
+.recipe-card-date {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+/* --- Results Count --- */
+.results-count {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 16px;
+  padding-left: 4px;
+}
+
+/* --- Detail Hero Top (with edit button) --- */
+.detail-hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/* --- Edit Picker Group (structured pickers in edit mode) --- */
+.edit-picker-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
 /* --- Responsive (basic) --- */
 @media (max-width: 768px) {
   .app-header-inner {
@@ -678,10 +803,20 @@
     flex-direction: column;
     gap: 12px;
   }
+  .feeds-toolbar {
+    flex-direction: column;
+  }
+  .sort-group {
+    width: 100%;
+  }
   .recipe-card {
     padding: 20px;
   }
   .auth-card {
     padding: 28px 24px;
+  }
+  .detail-hero-top {
+    flex-direction: column;
+    gap: 12px;
   }
 }

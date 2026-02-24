@@ -4,7 +4,18 @@ import UrlCardImage from "../components/UrlCardImage";
 import { storage } from "../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+const CUISINE_OPTIONS = [
+  "Indian", "Italian", "Chinese", "Mexican", "Thai", "American", "Japanese", "Korean", "Middle Eastern", "Other",
+];
+
+const CATEGORY_OPTIONS = [
+  "Breakfast", "Lunch", "Dinner", "Snack", "Vegan", "Vegetarian", "Gluten Free", "Dessert", "Quick Meal", "Healthy",
+];
+
 function renderStars(rating, setRating) {
+  if (!setRating && (!rating || rating === 0)) {
+    return <span className="rating-unset">Not rated</span>;
+  }
   return (
     <span>
       {[1, 2, 3, 4, 5].map((star) => (
@@ -39,6 +50,12 @@ function formatCategory(category) {
   return category ? category.charAt(0).toUpperCase() + category.slice(1) : "";
 }
 
+function formatDate(timestamp) {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 function MyRecipes({ recipes, editRecipe, deleteRecipe, showToast, currentUser }) {
   const typeOptions = ["all", ...getUniqueOptions(recipes, "type")];
   const cuisineOptions = ["all", ...getUniqueOptions(recipes, "cuisine")];
@@ -64,15 +81,35 @@ function MyRecipes({ recipes, editRecipe, deleteRecipe, showToast, currentUser }
           : recipe.category === filterCategory))
   );
 
+  function handleTagClick(type, value) {
+    if (type === "cuisine") {
+      setFilterCuisine((prev) => (prev === value ? "all" : value));
+    } else if (type === "category") {
+      setFilterCategory((prev) => (prev === value ? "all" : value));
+    }
+  }
+
   function startEdit(recipe) {
     setEditingId(recipe.id);
-    setEditForm({ ...recipe });
+    setEditForm({
+      ...recipe,
+      category: Array.isArray(recipe.category) ? recipe.category : (recipe.category ? [recipe.category] : []),
+    });
     setEditThumbFile(null);
     setEditThumbPreview("");
   }
 
   function handleEditChange(field, value) {
     setEditForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function toggleEditCategory(value) {
+    setEditForm((prev) => ({
+      ...prev,
+      category: prev.category.includes(value)
+        ? prev.category.filter((v) => v !== value)
+        : [...prev.category, value],
+    }));
   }
 
   async function handleSaveEdit() {
@@ -169,24 +206,39 @@ function MyRecipes({ recipes, editRecipe, deleteRecipe, showToast, currentUser }
                   />
                 </div>
 
-                <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
-                  <div style={{ flex: 1 }}>
-                    <label>Category</label>
-                    <input
-                      type="text"
-                      value={Array.isArray(editForm.category) ? editForm.category.join(", ") : editForm.category}
-                      onChange={(e) =>
-                        handleEditChange("category", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))
-                      }
-                    />
+                {/* Cuisine - structured radio pickers */}
+                <div className="form-group">
+                  <label>Cuisine</label>
+                  <div className="edit-picker-group">
+                    {CUISINE_OPTIONS.map((opt) => (
+                      <label key={opt} className="form-check-label">
+                        <input
+                          type="radio"
+                          name="edit-cuisine"
+                          value={opt}
+                          checked={editForm.cuisine === opt}
+                          onChange={() => handleEditChange("cuisine", opt)}
+                        />
+                        {opt}
+                      </label>
+                    ))}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <label>Cuisine</label>
-                    <input
-                      type="text"
-                      value={editForm.cuisine}
-                      onChange={(e) => handleEditChange("cuisine", e.target.value)}
-                    />
+                </div>
+
+                {/* Category - structured checkbox pickers */}
+                <div className="form-group">
+                  <label>Category</label>
+                  <div className="edit-picker-group">
+                    {CATEGORY_OPTIONS.map((opt) => (
+                      <label key={opt} className="form-check-label">
+                        <input
+                          type="checkbox"
+                          checked={editForm.category?.includes(opt) || false}
+                          onChange={() => toggleEditCategory(opt)}
+                        />
+                        {opt}
+                      </label>
+                    ))}
                   </div>
                 </div>
 
@@ -250,7 +302,7 @@ function MyRecipes({ recipes, editRecipe, deleteRecipe, showToast, currentUser }
                       onFocus={(e) => (e.currentTarget.style.borderColor = "#6366f1")}
                       onBlur={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
                     >
-                      📋 Click here &amp; paste an image (Ctrl+V)
+                      Click here &amp; paste an image (Ctrl+V)
                       <br />
                       <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
                         Copy an image from the web, then paste here
@@ -338,15 +390,33 @@ function MyRecipes({ recipes, editRecipe, deleteRecipe, showToast, currentUser }
                     <h3 className="recipe-card-title">
                       <Link to={`/recipe/${recipe.id}`}>{recipe.title}</Link>
                     </h3>
+                    {recipe.createdAt && (
+                      <div className="recipe-card-date">{formatDate(recipe.createdAt)}</div>
+                    )}
                   </div>
                   <div>{renderStars(recipe.rating)}</div>
                 </div>
 
                 <div className="recipe-card-meta">
-                  {recipe.cuisine && <span className="tag">{recipe.cuisine}</span>}
+                  {recipe.cuisine && (
+                    <span
+                      className={`tag tag-clickable ${filterCuisine === recipe.cuisine ? "tag-active" : ""}`}
+                      onClick={() => handleTagClick("cuisine", recipe.cuisine)}
+                      title={`Filter by ${recipe.cuisine}`}
+                    >
+                      {recipe.cuisine}
+                    </span>
+                  )}
                   {Array.isArray(recipe.category) &&
                     recipe.category.map((cat) => (
-                      <span key={cat} className="tag tag-outline">{cat}</span>
+                      <span
+                        key={cat}
+                        className={`tag tag-outline tag-clickable ${filterCategory === cat ? "tag-active" : ""}`}
+                        onClick={() => handleTagClick("category", cat)}
+                        title={`Filter by ${cat}`}
+                      >
+                        {cat}
+                      </span>
                     ))}
                   <span className={`tag ${recipe.status === "made" ? "tag-success" : "tag-warning"}`}>
                     {recipe.status === "made" ? "Made it" : "Yet to make it"}
