@@ -25,12 +25,20 @@ import {
   increment,
 } from "firebase/firestore";
 
+const LOCKED_NAV_MESSAGES = {
+  "/my-recipes": { emoji: "🥘", text: "Sign up to start building your recipe collection!" },
+  "/enter-recipe": { emoji: "🍳", text: "Sign up to save and share your favorite recipes!" },
+  "/account": { emoji: "👨‍🍳", text: "Sign up to create your cooking profile!" },
+};
+
 function App() {
   const { currentUser, logout, loading } = useAuth();
   const [recipes, setRecipes] = useState([]);
   const [feedRecipes, setFeedRecipes] = useState([]);
   const [userName, setUserName] = useState("Your Name");
   const [toast, setToast] = useState({ show: false, message: "" });
+  const [lockedPrompt, setLockedPrompt] = useState(null);
+  const lockedPromptTimer = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const prevUserRef = useRef(undefined);
@@ -201,6 +209,19 @@ function App() {
     navigate("/login");
   }
 
+  function handleLockedNavClick(path) {
+    const msg = LOCKED_NAV_MESSAGES[path];
+    if (!msg) return;
+    // Clear any existing timer
+    if (lockedPromptTimer.current) clearTimeout(lockedPromptTimer.current);
+    // Reset first to re-trigger animation if clicking same item
+    setLockedPrompt(null);
+    requestAnimationFrame(() => {
+      setLockedPrompt(msg);
+      lockedPromptTimer.current = setTimeout(() => setLockedPrompt(null), 4000);
+    });
+  }
+
   function isActive(path) {
     return location.pathname === path;
   }
@@ -251,6 +272,30 @@ function App() {
               </>
             ) : (
               <>
+                <span
+                  className="nav-link nav-link-locked"
+                  onClick={() => handleLockedNavClick("/my-recipes")}
+                  role="button"
+                  tabIndex={0}
+                >
+                  My Recipes
+                </span>
+                <span
+                  className="nav-link nav-link-locked"
+                  onClick={() => handleLockedNavClick("/enter-recipe")}
+                  role="button"
+                  tabIndex={0}
+                >
+                  Add Recipe
+                </span>
+                <span
+                  className="nav-link nav-link-locked"
+                  onClick={() => handleLockedNavClick("/account")}
+                  role="button"
+                  tabIndex={0}
+                >
+                  Account
+                </span>
                 <div className="nav-divider" />
                 <Link to="/login" className="nav-link">
                   Login
@@ -267,6 +312,31 @@ function App() {
           </nav>
         </div>
       </header>
+
+      {/* Locked nav signup prompt */}
+      {lockedPrompt && (
+        <div className="locked-prompt" key={lockedPrompt.text}>
+          <div className="locked-prompt-inner">
+            <span className="locked-prompt-emoji">{lockedPrompt.emoji}</span>
+            <span className="locked-prompt-text">{lockedPrompt.text}</span>
+            <Link
+              to="/signup"
+              className="btn-primary btn-sm locked-prompt-cta"
+              style={{ textDecoration: "none", color: "#fff" }}
+              onClick={() => setLockedPrompt(null)}
+            >
+              Sign Up Free
+            </Link>
+            <button
+              className="locked-prompt-close"
+              onClick={() => setLockedPrompt(null)}
+              aria-label="Dismiss"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
 
       <Toast show={toast.show} message={toast.message} />
 
