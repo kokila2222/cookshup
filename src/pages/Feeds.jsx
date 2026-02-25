@@ -73,7 +73,7 @@ function PancakeLikeButton({ recipeId, likes, onLike, currentUser }) {
 function Feeds({ recipes, onLike }) {
   const { currentUser } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
+  const [sortBy, setSortBy] = useState("default");
   const [filterType, setFilterType] = useState("all");
   const [filterCuisine, setFilterCuisine] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
@@ -146,13 +146,14 @@ function Feeds({ recipes, onLike }) {
     }
   }
 
-  const hasActiveFilters = filterType !== "all" || filterCuisine !== "all" || filterCategory !== "all" || searchQuery.trim();
+  const hasActiveFilters = filterType !== "all" || filterCuisine !== "all" || filterCategory !== "all" || searchQuery.trim() || sortBy !== "default";
 
   function clearFilters() {
     setFilterType("all");
     setFilterCuisine("all");
     setFilterCategory("all");
     setSearchQuery("");
+    setSortBy("default");
   }
 
   return (
@@ -182,6 +183,7 @@ function Feeds({ recipes, onLike }) {
         <div className="sort-group">
           <span className="filter-label">Sort by</span>
           <select className="filter-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <option value="default">All</option>
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
             <option value="highest_rated">Highest Rated</option>
